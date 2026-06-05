@@ -47,9 +47,9 @@ Temporizador en tiempo real para overlays de streaming (OBS, Streamlabs). Permit
 
 ```mermaid
 flowchart LR
-    A[/control] -->|PUT /api/state| B[In-Memory Store]
-    B -->|SSE /api/stream| C[/overlay]
-    B -->|SSE /api/stream| D[/viewer]
+    A["/control"] -->|"PUT /api/state"| B["In-Memory Store"]
+    B -->|"SSE /api/stream"| C["/overlay"]
+    B -->|"SSE /api/stream"| D["/viewer"]
 ```
 
 El store vive en `globalThis.__cronometroStore` (sobrevive hot-reload). El timer tickea server-side cada 50ms calculando el elapsed real. Los clientes (overlay/viewer) hacen interpolación local a ~30fps para renderizado fluido.

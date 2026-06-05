@@ -45,8 +45,8 @@ Marcador de puntuación en tiempo real para overlays de streaming (OBS, Streamla
 
 ```mermaid
 flowchart LR
-    A[/control] -->|PUT /api/state| B[In-Memory Store]
-    B -->|SSE /api/stream| C[/overlay]
+    A["/control"] -->|"PUT /api/state"| B["In-Memory Store"]
+    B -->|"SSE /api/stream"| C["/overlay"]
 ```
 
 El store vive en `globalThis.__puntosStore` (sobrevive hot-reload). Cuando el estado cambia, se notifica a todos los clientes SSE conectados con el nuevo estado completo.
