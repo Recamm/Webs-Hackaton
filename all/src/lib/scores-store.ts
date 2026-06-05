@@ -1,12 +1,11 @@
-// In-memory store for game state (persists while server is running)
-// Uses globalThis to ensure singleton across Turbopack module instances
+// Scores store - In-memory state for the scoreboard (persists while server is running)
 
 export interface Player {
   id: string;
   name: string;
   score: number;
   color: string;
-  image: string; // base64 or URL, empty means use text
+  image: string;
 }
 
 export interface OverlayStyle {
@@ -40,6 +39,12 @@ export interface GameState {
   manualOrder: boolean;
 }
 
+export interface ScoresScene {
+  id: string;
+  name: string;
+  state: GameState;
+}
+
 const defaultStyle: OverlayStyle = {
   fontFamily: "'Orbitron', sans-serif",
   customFont: "",
@@ -63,25 +68,18 @@ const defaultStyle: OverlayStyle = {
   imageSize: 48,
 };
 
-// SSE clients
 type SSEClient = (data: GameState) => void;
-
-export interface Scene {
-  id: string;
-  name: string;
-  state: GameState;
-}
 
 interface GlobalStore {
   gameState: GameState;
   clients: Set<SSEClient>;
-  scenes: Scene[];
+  scenes: ScoresScene[];
 }
 
-const globalForStore = globalThis as unknown as { __puntosStore?: GlobalStore };
+const globalForStore = globalThis as unknown as { __allScoresStore?: GlobalStore };
 
-if (!globalForStore.__puntosStore) {
-  globalForStore.__puntosStore = {
+if (!globalForStore.__allScoresStore) {
+  globalForStore.__allScoresStore = {
     gameState: {
       players: [],
       style: defaultStyle,
@@ -94,7 +92,7 @@ if (!globalForStore.__puntosStore) {
   };
 }
 
-const store = globalForStore.__puntosStore;
+const store = globalForStore.__allScoresStore;
 
 export function getState(): GameState {
   return store.gameState;
@@ -102,22 +100,6 @@ export function getState(): GameState {
 
 export function setState(newState: GameState) {
   store.gameState = newState;
-  notifyClients();
-}
-
-export function updatePlayers(players: Player[]) {
-  store.gameState.players = players;
-  notifyClients();
-}
-
-export function updateStyle(style: OverlayStyle) {
-  store.gameState.style = style;
-  notifyClients();
-}
-
-export function updateTitle(title: string, showTitle: boolean) {
-  store.gameState.title = title;
-  store.gameState.showTitle = showTitle;
   notifyClients();
 }
 
@@ -134,12 +116,12 @@ function notifyClients() {
 }
 
 // Scenes
-export function getScenes(): Scene[] {
+export function getScenes(): ScoresScene[] {
   return store.scenes;
 }
 
-export function saveScene(name: string): Scene {
-  const scene: Scene = {
+export function saveScene(name: string): ScoresScene {
+  const scene: ScoresScene = {
     id: Math.random().toString(36).substring(2, 9),
     name,
     state: JSON.parse(JSON.stringify(store.gameState)),

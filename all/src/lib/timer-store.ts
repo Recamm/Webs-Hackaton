@@ -1,5 +1,4 @@
-// In-memory store for timer state (persists while server is running)
-// Uses globalThis to ensure singleton across Turbopack module instances
+// Timer store - In-memory state for the timer (persists while server is running)
 
 export interface TimerStyle {
   fontFamily: string;
@@ -30,17 +29,13 @@ export interface TimerStyle {
 
 export type TimerMode = "countup" | "countdown";
 export type TimerStatus = "stopped" | "running" | "paused";
-
 export type LayoutDirection = "column" | "column-reverse" | "row" | "row-reverse";
 
 export interface TimerState {
   mode: TimerMode;
   status: TimerStatus;
-  // elapsed ms for countup, remaining ms for countdown
   currentMs: number;
-  // countdown target in ms
   countdownFrom: number;
-  // timestamp when timer was last started/resumed
   startedAt: number | null;
   style: TimerStyle;
   title: string;
@@ -50,9 +45,14 @@ export interface TimerState {
   titleGap: number;
   layoutDirection: LayoutDirection;
   layoutCenter: boolean;
-  // Countdown alert (optional)
   countdownAlert: boolean;
   countdownAlertStyle: "flash" | "blink" | "none";
+}
+
+export interface TimerScene {
+  id: string;
+  name: string;
+  state: TimerState;
 }
 
 const defaultStyle: TimerStyle = {
@@ -82,31 +82,24 @@ const defaultStyle: TimerStyle = {
   format: "mm:ss",
 };
 
-// SSE clients
 type SSEClient = (data: TimerState) => void;
-
-export interface Scene {
-  id: string;
-  name: string;
-  state: TimerState;
-}
 
 interface GlobalStore {
   timerState: TimerState;
   clients: Set<SSEClient>;
   interval: ReturnType<typeof setInterval> | null;
-  scenes: Scene[];
+  scenes: TimerScene[];
 }
 
-const globalForStore = globalThis as unknown as { __cronometroStore?: GlobalStore };
+const globalForStore = globalThis as unknown as { __allTimerStore?: GlobalStore };
 
-if (!globalForStore.__cronometroStore) {
-  globalForStore.__cronometroStore = {
+if (!globalForStore.__allTimerStore) {
+  globalForStore.__allTimerStore = {
     timerState: {
       mode: "countup",
       status: "stopped",
       currentMs: 0,
-      countdownFrom: 300000, // 5 min default
+      countdownFrom: 300000,
       startedAt: null,
       style: defaultStyle,
       title: "",
@@ -125,16 +118,14 @@ if (!globalForStore.__cronometroStore) {
   };
 }
 
-const store = globalForStore.__cronometroStore;
+const store = globalForStore.__allTimerStore;
 
 function startTicking() {
   if (store.interval) return;
   store.interval = setInterval(() => {
     if (store.timerState.status !== "running" || !store.timerState.startedAt) return;
-
     const now = Date.now();
     const elapsed = now - store.timerState.startedAt;
-
     if (store.timerState.mode === "countup") {
       store.timerState.currentMs += elapsed;
     } else {
@@ -145,7 +136,6 @@ function startTicking() {
         store.timerState.startedAt = null;
       }
     }
-
     store.timerState.startedAt = now;
     notifyClients();
   }, 50);
@@ -157,9 +147,7 @@ export function getState(): TimerState {
 
 export function setState(newState: TimerState) {
   store.timerState = newState;
-  if (newState.status === "running") {
-    startTicking();
-  }
+  if (newState.status === "running") startTicking();
   notifyClients();
 }
 
@@ -176,7 +164,6 @@ export function startTimer() {
 
 export function pauseTimer() {
   if (store.timerState.status !== "running") return;
-  // Compute final elapsed before pausing
   if (store.timerState.startedAt) {
     const elapsed = Date.now() - store.timerState.startedAt;
     if (store.timerState.mode === "countup") {
@@ -216,12 +203,12 @@ function notifyClients() {
 }
 
 // Scenes
-export function getScenes(): Scene[] {
+export function getScenes(): TimerScene[] {
   return store.scenes;
 }
 
-export function saveScene(name: string): Scene {
-  const scene: Scene = {
+export function saveScene(name: string): TimerScene {
+  const scene: TimerScene = {
     id: Math.random().toString(36).substring(2, 9),
     name,
     state: JSON.parse(JSON.stringify(store.timerState)),

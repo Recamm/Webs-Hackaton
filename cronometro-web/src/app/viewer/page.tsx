@@ -46,8 +46,6 @@ interface TimerState {
   titleGap: number;
   layoutDirection: "column" | "column-reverse" | "row" | "row-reverse";
   layoutCenter: boolean;
-  countdownAlert?: boolean;
-  countdownAlertStyle?: "flash" | "blink" | "none";
 }
 
 function formatTime(ms: number, format: string, separator: string): string {
@@ -86,7 +84,7 @@ function getAnimationCSS(animation: string): string {
   }
 }
 
-export default function OverlayPage() {
+export default function ViewerPage() {
   const [state, setState] = useState<TimerState | null>(null);
   const [displayMs, setDisplayMs] = useState(0);
 
@@ -125,7 +123,11 @@ export default function OverlayPage() {
   }, [state]);
 
   if (!state) {
-    return <div className="min-h-screen" />;
+    return (
+      <div className="min-h-screen bg-neutral-950 flex items-center justify-center">
+        <div className="text-neutral-500 text-lg">Conectando...</div>
+      </div>
+    );
   }
 
   const style = state.style;
@@ -148,30 +150,8 @@ export default function OverlayPage() {
     `}</style>
   ) : null;
 
-  // Countdown alert detection
-  const isCountdownFinished = state.mode === "countdown" && displayMs <= 0 && state.status === "stopped";
-  const showAlert = isCountdownFinished && (state.countdownAlert !== false);
-  const alertStyle = state.countdownAlertStyle ?? "flash";
-
-  const alertKeyframes = showAlert ? (
-    <style>{`
-      @keyframes countdownFlash {
-        0%, 100% { opacity: 1; color: #ff2222; }
-        50% { opacity: 0.2; color: #ff0000; }
-      }
-      @keyframes countdownBlink {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0; }
-      }
-    `}</style>
-  ) : null;
-
-  const alertAnimationStyle = showAlert && alertStyle !== "none" ? {
-    animation: alertStyle === "flash" ? "countdownFlash 0.8s ease-in-out infinite" : "countdownBlink 1s step-end infinite",
-  } : {};
-
   return (
-    <div className="min-h-screen flex items-center justify-center" style={{ background: "transparent" }}>
+    <div className="min-h-screen bg-neutral-950 flex items-center justify-center">
       {/* Google Fonts */}
       <link
         href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Press+Start+2P&family=Roboto+Mono:wght@400;700&family=Bebas+Neue&family=Russo+One&family=Audiowide&family=Exo+2:wght@400;700&family=Chakra+Petch:wght@400;700&display=swap"
@@ -181,7 +161,6 @@ export default function OverlayPage() {
         <link href={customFontUrl} rel="stylesheet" />
       )}
       {glowKeyframes}
-      {alertKeyframes}
       <div
         className={animClass}
         style={{
@@ -226,7 +205,6 @@ export default function OverlayPage() {
               : "none",
             textAlign: "center",
             animation: style.animation === "glow" ? "glowPulse 2s ease-in-out infinite" : undefined,
-            ...alertAnimationStyle,
           }}
         >
           {formatTime(displayMs, style.format, style.separatorChar)}

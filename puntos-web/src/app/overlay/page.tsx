@@ -34,7 +34,7 @@ export default function OverlayPage() {
   }
 
   const { players, style, title, showTitle } = state;
-  const sortedPlayers = [...players].sort((a, b) => b.score - a.score);
+  const sortedPlayers = state.manualOrder ? [...players] : [...players].sort((a, b) => b.score - a.score);
 
   const effectiveFont = style.customFont
     ? `'${style.customFont}', sans-serif`
@@ -44,11 +44,26 @@ export default function OverlayPage() {
     ? `https://fonts.googleapis.com/css2?family=${encodeURIComponent(style.customFont)}:wght@400;700;900&display=swap`
     : "";
 
+  const positionStyles: Record<string, React.CSSProperties> = {
+    "top-left": { justifyContent: "flex-start", alignItems: "flex-start" },
+    "top-center": { justifyContent: "flex-start", alignItems: "center" },
+    "top-right": { justifyContent: "flex-start", alignItems: "flex-end" },
+    "center-left": { justifyContent: "center", alignItems: "flex-start" },
+    "center": { justifyContent: "center", alignItems: "center" },
+    "center-right": { justifyContent: "center", alignItems: "flex-end" },
+    "bottom-left": { justifyContent: "flex-end", alignItems: "flex-start" },
+    "bottom-center": { justifyContent: "flex-end", alignItems: "center" },
+    "bottom-right": { justifyContent: "flex-end", alignItems: "flex-end" },
+  };
+
+  const posStyle = positionStyles[style.position || "top-center"] || positionStyles["top-center"];
+
   const containerStyle: React.CSSProperties = {
     fontFamily: effectiveFont,
     padding: `${style.padding}px`,
     gap: `${style.gap}px`,
     opacity: style.opacity / 100,
+    ...posStyle,
   };
 
   const layoutClass =
@@ -88,7 +103,7 @@ export default function OverlayPage() {
         {sortedPlayers.map((player, index) => (
           <div
             key={player.id}
-            className={`overlay-player-card ${animationClass}`}
+            className={`overlay-player-card ${animationClass} ${style.uniformCardSize ? "overlay-uniform" : ""}`}
             style={{
               backgroundColor: style.cardBackground,
               borderRadius: `${style.borderRadius}px`,
@@ -101,27 +116,40 @@ export default function OverlayPage() {
             {style.showPosition && (
               <div
                 className="overlay-position"
-                style={{ color: style.accentColor }}
+                style={{ color: style.accentColor, fontSize: `${style.fontSize * 1.2}px` }}
               >
                 {index + 1}
               </div>
             )}
-            <div
-              className="overlay-player-name"
-              style={{
-                color: player.color,
-                fontSize: `${style.fontSize}px`,
-                fontFamily: effectiveFont,
-              }}
-            >
-              {player.name}
-            </div>
+            {player.image ? (
+              <img
+                src={player.image}
+                alt={player.name}
+                className="overlay-player-image"
+                style={{
+                  width: `${style.imageSize || style.fontSize * 2.2}px`,
+                  height: `${style.imageSize || style.fontSize * 2.2}px`,
+                  borderRadius: `${style.borderRadius / 2}px`,
+                }}
+              />
+            ) : (
+              <div
+                className="overlay-player-name"
+                style={{
+                  color: player.color,
+                  fontSize: `${style.fontSize * 1.2}px`,
+                  fontFamily: effectiveFont,
+                }}
+              >
+                {player.name}
+              </div>
+            )}
             {style.showScore && (
               <div
                 className="overlay-score"
                 style={{
                   color: style.textColor,
-                  fontSize: `${style.fontSize * 1.2}px`,
+                  fontSize: `${style.fontSize * 1.6}px`,
                   fontFamily: effectiveFont,
                 }}
               >
@@ -149,9 +177,9 @@ export default function OverlayPage() {
         .overlay-root {
           display: flex;
           flex-direction: column;
-          align-items: center;
           width: 100%;
           min-height: 100vh;
+          align-items: center;
         }
 
         .overlay-loading {
@@ -171,6 +199,7 @@ export default function OverlayPage() {
         .overlay-players {
           display: flex;
           width: 100%;
+          justify-content: center;
         }
 
         .overlay-vertical {
@@ -182,6 +211,7 @@ export default function OverlayPage() {
           flex-direction: row;
           justify-content: center;
           flex-wrap: wrap;
+          align-items: stretch;
         }
 
         .overlay-grid {
@@ -192,15 +222,14 @@ export default function OverlayPage() {
         .overlay-player-card {
           display: flex;
           align-items: center;
-          gap: 12px;
-          padding: 10px 20px;
+          gap: 16px;
+          padding: 12px 24px;
           transition: all 0.3s ease;
         }
 
         .overlay-position {
-          font-size: 1.5em;
           font-weight: 900;
-          min-width: 30px;
+          min-width: 36px;
           text-align: center;
           opacity: 0.8;
         }
@@ -215,8 +244,18 @@ export default function OverlayPage() {
 
         .overlay-score {
           font-weight: 900;
-          min-width: 50px;
+          min-width: 60px;
           text-align: right;
+        }
+
+        .overlay-uniform {
+          width: 100%;
+          justify-content: space-between;
+        }
+
+        .overlay-player-image {
+          object-fit: cover;
+          flex-shrink: 0;
         }
 
         /* Animations */

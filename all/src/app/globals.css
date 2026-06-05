@@ -13,8 +13,19 @@
   --color-accent: #00ff88;
 }
 
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
 /* Fix select/option readability in dark theme */
 select option {
   background-color: var(--color-surface);
   color: #e2e8f0;
+}
+
+/* Override for overlay routes - OBS needs transparent bg */
+body:has(.overlay-root) {
+  background: transparent !important;
 }

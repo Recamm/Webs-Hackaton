@@ -1,28 +1,30 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-primary: #00ff88;
+  --color-bg: #0a0a0f;
+  --color-surface: #1a1a2e;
+  --color-surface-hover: #222233;
+  --color-border: #333333;
+  --color-text: #ffffff;
+  --color-text-muted: #888888;
+  --color-danger: #ff4444;
+  --color-warning: #ffaa00;
+  --color-accent: #00ff88;
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: Arial, Helvetica, sans-serif;
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Fix select/option readability in dark theme */
+select option {
+  background-color: var(--color-surface);
+  color: #e2e8f0;
 }
 
 /* Override for overlay route - OBS needs transparent bg */
